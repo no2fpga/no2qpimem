@@ -1,5 +1,5 @@
 /*
- * qspi_master.v
+ * qpi_memctrl.v
  *
  * vim: ts=4 sw=4
  *
@@ -33,7 +33,7 @@
 
 `default_nettype none
 
-module qspi_master #(
+module qpi_memctrl #(
 	parameter integer CMD_READ  = 16'hEBEB,
 	parameter integer CMD_WRITE = 16'h0202,
 	parameter integer DUMMY_CLK = 6,
@@ -757,4 +757,4 @@ module qspi_master #(
 			si_data_n <= phy2shift_spi(si_data_n, phy_io_i);
 	end
 
-endmodule
+endmodule // qpi_memctrl

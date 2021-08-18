@@ -1,16 +1,16 @@
-CORE := qspi_master
+CORE := no2qpimem
 
-DEPS_qspi_master = no2misc no2ice40
+DEPS_no2qpimem := no2misc no2ice40
 
-RTL_SRCS_qspi_master := $(addprefix rtl/, \
-	qspi_master.v \
-	qspi_phy_ice40_1x.v \
-	qspi_phy_ice40_2x.v \
-	qspi_phy_ice40_4x.v \
+RTL_SRCS_no2qpimem := $(addprefix rtl/, \
+	qpi_memctrl.v \
+	qpi_phy_ice40_1x.v \
+	qpi_phy_ice40_2x.v \
+	qpi_phy_ice40_4x.v \
 )
 
-TESTBENCHES_qspi_master := \
-	qspi_master_tb \
+TESTBENCHES_no2qpimem := \
+	qpi_memctrl_tb \
 	$(NULL)
 
 include $(NO2BUILD_DIR)/core-magic.mk

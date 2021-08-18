@@ -1,5 +1,5 @@
 /*
- * qspi_master_tb.v
+ * qpi_memctrl_tb.v
  *
  * vim: ts=4 sw=4
  *
@@ -34,7 +34,7 @@
 `default_nettype none
 `timescale 1ns / 100ps
 
-module qspi_master_tb;
+module qpi_memctrl_tb;
 
 	// Signals
 	// -------
@@ -77,15 +77,15 @@ module qspi_master_tb;
 	// ---------------
 
 	initial begin
-		$dumpfile("qspi_master_tb.vcd");
-		$dumpvars(0,qspi_master_tb);
+		$dumpfile("qpi_memctrl_tb.vcd");
+		$dumpvars(0,qpi_memctrl_tb);
 	end
 
 
 	// DUT
 	// ---
 
-	qspi_master #(
+	qpi_memctrl #(
 		.CMD_READ(16'h3802),
 		.CMD_WRITE(16'hEBEB),
 		.DUMMY_CLK(6),
@@ -253,4 +253,4 @@ module qspi_master_tb;
 
 	assign rst = rst_cnt[3];
 
-endmodule
+endmodule // qpi_memctrl_tb
