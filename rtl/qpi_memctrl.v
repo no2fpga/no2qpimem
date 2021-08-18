@@ -390,14 +390,14 @@ module qpi_memctrl #(
 				.DEPTH(FIFO_DEPTH),
 				.WIDTH(36)
 			) cmd_fifo_I (
-				.wr_data(cf_di),
-				.wr_ena(cf_wren),
-				.wr_full(cf_full),
-				.rd_data(cf_do),
-				.rd_ena(cf_rden),
-				.rd_empty(cf_empty),
-				.clk(clk),
-				.rst(rst)
+				.wr_data  (cf_di),
+				.wr_ena   (cf_wren),
+				.wr_full  (cf_full),
+				.rd_data  (cf_do),
+				.rd_ena   (cf_rden),
+				.rd_empty (cf_empty),
+				.clk      (clk),
+				.rst      (rst)
 			);
 
 			// Response
@@ -405,14 +405,14 @@ module qpi_memctrl #(
 				.DEPTH(FIFO_DEPTH),
 				.WIDTH(32)
 			) rsp_fifo_I (
-				.wr_data(rf_di),
-				.wr_ena(rf_wren_safe),
-				.wr_full(rf_full),
-				.rd_data(rf_do),
-				.rd_ena(rf_rden),
-				.rd_empty(rf_empty),
-				.clk(clk),
-				.rst(rst)
+				.wr_data  (rf_di),
+				.wr_ena   (rf_wren_safe),
+				.wr_full  (rf_full),
+				.rd_data  (rf_do),
+				.rd_ena   (rf_rden),
+				.rd_empty (rf_empty),
+				.clk      (clk),
+				.rst      (rst)
 			);
 		end else begin
 			// Command
@@ -420,14 +420,14 @@ module qpi_memctrl #(
 				.DEPTH(FIFO_DEPTH),
 				.WIDTH(36)
 			) cmd_fifo_I (
-				.wr_data(cf_di),
-				.wr_ena(cf_wren),
-				.wr_full(cf_full),
-				.rd_data(cf_do),
-				.rd_ena(cf_rden),
-				.rd_empty(cf_empty),
-				.clk(clk),
-				.rst(rst)
+				.wr_data  (cf_di),
+				.wr_ena   (cf_wren),
+				.wr_full  (cf_full),
+				.rd_data  (cf_do),
+				.rd_ena   (cf_rden),
+				.rd_empty (cf_empty),
+				.clk      (clk),
+				.rst      (rst)
 			);
 
 			// Response
@@ -435,14 +435,14 @@ module qpi_memctrl #(
 				.DEPTH(FIFO_DEPTH),
 				.WIDTH(32)
 			) rsp_fifo_I (
-				.wr_data(rf_di),
-				.wr_ena(rf_wren_safe),
-				.wr_full(rf_full),
-				.rd_data(rf_do),
-				.rd_ena(rf_rden),
-				.rd_empty(rf_empty),
-				.clk(clk),
-				.rst(rst)
+				.wr_data  (rf_di),
+				.wr_ena   (rf_wren_safe),
+				.wr_full  (rf_full),
+				.rd_data  (rf_do),
+				.rd_ena   (rf_rden),
+				.rd_empty (rf_empty),
+				.clk      (clk),
+				.rst      (rst)
 			);
 		end
 	endgenerate

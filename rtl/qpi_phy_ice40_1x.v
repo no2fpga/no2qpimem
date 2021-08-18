@@ -62,18 +62,18 @@ module qpi_phy_ice40_1x #(
 	wire [3:0] phy_io_i_ne;
 
 	SB_IO #(
-		.PIN_TYPE(6'b1101_00),
-		.PULLUP(1'b1),
-		.NEG_TRIGGER(1'b0),
-		.IO_STANDARD("SB_LVCMOS")
+		.PIN_TYPE    (6'b1101_00),
+		.PULLUP      (1'b1),
+		.NEG_TRIGGER (1'b0),
+		.IO_STANDARD ("SB_LVCMOS")
 	) iob_io_I[3:0] (
-		.PACKAGE_PIN(pad_io),
-		.INPUT_CLK(clk),
-		.OUTPUT_CLK(clk),
-		.OUTPUT_ENABLE(phy_io_oe),
-		.D_OUT_0(phy_io_o),
-		.D_IN_0(phy_io_i_pe),
-		.D_IN_1(phy_io_i_ne)
+		.PACKAGE_PIN   (pad_io),
+		.INPUT_CLK     (clk),
+		.OUTPUT_CLK    (clk),
+		.OUTPUT_ENABLE (phy_io_oe),
+		.D_OUT_0       (phy_io_o),
+		.D_IN_0        (phy_io_i_pe),
+		.D_IN_1        (phy_io_i_ne)
 	);
 
 	assign phy_io_i = NEG_IN ? phy_io_i_ne : phy_io_i_pe;
@@ -87,15 +87,15 @@ module qpi_phy_ice40_1x #(
 				clk_active <= phy_clk_o;
 
 			SB_IO #(
-				.PIN_TYPE(6'b0100_11),
-				.PULLUP(1'b0),
-				.NEG_TRIGGER(1'b0),
-				.IO_STANDARD("SB_LVCMOS")
+				.PIN_TYPE    (6'b0100_11),
+				.PULLUP      (1'b0),
+				.NEG_TRIGGER (1'b0),
+				.IO_STANDARD ("SB_LVCMOS")
 			) iob_clk_I (
-				.PACKAGE_PIN(pad_clk),
-				.OUTPUT_CLK(clk),
-				.D_OUT_0(1'b0),
-				.D_OUT_1(clk_active)
+				.PACKAGE_PIN (pad_clk),
+				.OUTPUT_CLK  (clk),
+				.D_OUT_0     (1'b0),
+				.D_OUT_1     (clk_active)
 			);
 		end
 	endgenerate
@@ -104,14 +104,14 @@ module qpi_phy_ice40_1x #(
 	generate
 		if (N_CS)
 			SB_IO #(
-				.PIN_TYPE(6'b0101_11),
-				.PULLUP(1'b0),
-				.NEG_TRIGGER(1'b0),
-				.IO_STANDARD("SB_LVCMOS")
+				.PIN_TYPE    (6'b0101_11),
+				.PULLUP      (1'b0),
+				.NEG_TRIGGER (1'b0),
+				.IO_STANDARD ("SB_LVCMOS")
 			) iob_cs_I[N_CS-1:0] (
-				.PACKAGE_PIN(pad_cs_n),
-				.OUTPUT_CLK(clk),
-				.D_OUT_0(phy_cs_o)
+				.PACKAGE_PIN (pad_cs_n),
+				.OUTPUT_CLK  (clk),
+				.D_OUT_0     (phy_cs_o)
 			);
 	endgenerate
 

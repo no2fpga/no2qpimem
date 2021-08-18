@@ -58,34 +58,34 @@ module qpi_phy_ice40_2x #(
 );
 
 	// IOs
-	reg  [3:0] phy_io_o_fe;
-	wire [3:0] phy_io_o_re;
+	wire [3:0] phy_io_o_pe;
+	reg  [3:0] phy_io_o_ne;
 
 	wire [3:0] phy_io_i_pe;
 	wire [3:0] phy_io_i_ne;
 	reg  [3:0] phy_io_i_ne_r;
 
 		// Output edge dispatch
-	assign phy_io_o_re = { phy_io_o[7], phy_io_o[5], phy_io_o[3], phy_io_o[1] };
+	assign phy_io_o_pe = { phy_io_o[7], phy_io_o[5], phy_io_o[3], phy_io_o[1] };
 
 	always @(posedge clk_1x)
-		phy_io_o_fe <= { phy_io_o[6], phy_io_o[4], phy_io_o[2], phy_io_o[0] };
+		phy_io_o_ne <= { phy_io_o[6], phy_io_o[4], phy_io_o[2], phy_io_o[0] };
 
 		// IOB
 	SB_IO #(
-		.PIN_TYPE(6'b1100_00),
-		.PULLUP(1'b1),
-		.NEG_TRIGGER(1'b0),
-		.IO_STANDARD("SB_LVCMOS")
+		.PIN_TYPE    (6'b1100_00),
+		.PULLUP      (1'b1),
+		.NEG_TRIGGER (1'b0),
+		.IO_STANDARD ("SB_LVCMOS")
 	) iob_io_I[3:0] (
-		.PACKAGE_PIN(pad_io),
-		.INPUT_CLK(clk_1x),
-		.OUTPUT_CLK(clk_1x),
-		.OUTPUT_ENABLE(phy_io_oe),
-		.D_OUT_0(phy_io_o_re),
-		.D_OUT_1(phy_io_o_fe),
-		.D_IN_0(phy_io_i_pe),
-		.D_IN_1(phy_io_i_ne)
+		.PACKAGE_PIN   (pad_io),
+		.INPUT_CLK     (clk_1x),
+		.OUTPUT_CLK    (clk_1x),
+		.OUTPUT_ENABLE (phy_io_oe),
+		.D_OUT_0       (phy_io_o_pe),
+		.D_OUT_1       (phy_io_o_ne),
+		.D_IN_0        (phy_io_i_pe),
+		.D_IN_1        (phy_io_i_ne)
 	);
 
 		// Input edge resync
@@ -122,15 +122,15 @@ module qpi_phy_ice40_2x #(
 			assign clk_out = (clk_toggle == clk_toggle_r) ? clk_active[0] : clk_active[1];
 
 			SB_IO #(
-				.PIN_TYPE(6'b0100_11),
-				.PULLUP(1'b1),
-				.NEG_TRIGGER(1'b0),
-				.IO_STANDARD("SB_LVCMOS")
+				.PIN_TYPE    (6'b0100_11),
+				.PULLUP      (1'b1),
+				.NEG_TRIGGER (1'b0),
+				.IO_STANDARD ("SB_LVCMOS")
 			) iob_clk_I (
-				.PACKAGE_PIN(pad_clk),
-				.OUTPUT_CLK(clk_2x),
-				.D_OUT_0(clk_out),
-				.D_OUT_1(1'b0)
+				.PACKAGE_PIN (pad_clk),
+				.OUTPUT_CLK  (clk_2x),
+				.D_OUT_0     (clk_out),
+				.D_OUT_1     (1'b0)
 			);
 		end
 	endgenerate
@@ -143,13 +143,13 @@ module qpi_phy_ice40_2x #(
 		// than needed by the controller.
 		if (N_CS)
 			SB_IO #(
-				.PIN_TYPE(6'b0110_11),
-				.PULLUP(1'b1),
-				.NEG_TRIGGER(1'b0),
-				.IO_STANDARD("SB_LVCMOS")
+				.PIN_TYPE    (6'b0110_11),
+				.PULLUP      (1'b1),
+				.NEG_TRIGGER (1'b0),
+				.IO_STANDARD ("SB_LVCMOS")
 			) iob_cs_I[N_CS-1:0] (
-				.PACKAGE_PIN(pad_cs_n),
-				.D_OUT_0(phy_cs_o)
+				.PACKAGE_PIN (pad_cs_n),
+				.D_OUT_0     (phy_cs_o)
 			);
 	endgenerate
 
