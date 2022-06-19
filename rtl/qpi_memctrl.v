@@ -9,6 +9,9 @@
 
 `default_nettype none
 
+`define MIN(a,b) (((a) < (b)) ? (a) : (b))
+`define MAX(a,b) (((a) < (b)) ? (b) : (a))
+
 module qpi_memctrl #(
 	parameter integer CMD_READ  = 16'hEBEB,
 	parameter integer CMD_WRITE = 16'h0202,
@@ -16,11 +19,19 @@ module qpi_memctrl #(
 	parameter integer PAUSE_CLK = 3,
 	parameter integer FIFO_DEPTH  = 1,
 	parameter integer N_CS = 2,				/* CS count */
+	parameter integer DATA_WIDTH = 32,		/* Access port width */
 	parameter integer PHY_SPEED = 1,		/* Speed Factor: 1x 2x 4x */
 	parameter integer PHY_WIDTH = 1,		/* Width Factor: 1x 2x    */
 	parameter integer PHY_DELAY = 6,		/* See PHY doc */
 
 	// auto
+	parameter integer DL  = DATA_WIDTH-1,
+
+	parameter integer STW = `MAX(DATA_WIDTH, 32),		/* Shifter Total Width */
+	parameter integer SDW = DATA_WIDTH,					/* Shifter width used for data burst */
+	parameter integer SCW = STW / PHY_WIDTH,			/* Shifter Channel Width */
+	parameter integer SL  = STW -1,
+
 	parameter integer PTW = (PHY_WIDTH * 4 * PHY_SPEED),	/* PHY Total   Width */
 	parameter integer PCW = (            4 * PHY_SPEED),	/* PHY Channel Width */
 	parameter integer PSW = (                PHY_SPEED)		/* PHY Signal  Width */
@@ -40,11 +51,11 @@ module qpi_memctrl #(
 	input  wire        mi_valid,
 	output wire        mi_ready,
 
-	input  wire [31:0] mi_wdata,
+	input  wire [DL:0] mi_wdata,
 	output wire        mi_wack,
 	output wire        mi_wlast,
 
-	output wire [31:0] mi_rdata,
+	output wire [DL:0] mi_rdata,
 	output wire        mi_rstb,
 	output wire        mi_rlast,
 
@@ -60,9 +71,6 @@ module qpi_memctrl #(
 	input wire clk,
 	input wire rst
 );
-
-	localparam integer STW = 32;				/* Shifter Total Width */
-	localparam integer SCW = STW / PHY_WIDTH;	/* Shifter Channel Width */
 
 
 	// Mapping Helpers
@@ -131,7 +139,10 @@ module qpi_memctrl #(
 	function [STW-1:0] shift_qpi_cmd;
 		input [STW-1:0] shift;
 		begin
-			shift_qpi_cmd[STW-1:0] = { shift[STW-PCW-1:0], {PCW{1'bx}} };
+			if (STW > PCW)
+				shift_qpi_cmd[STW-1:0] = { shift[STW-PCW-1:0], {PCW{1'bx}} };
+			else
+				shift_qpi_cmd = {STW{1'bx}};
 		end
 	endfunction
 
@@ -200,13 +211,16 @@ module qpi_memctrl #(
 	// Wishbone interface
 	wire        wbi_we_csr;
 	wire [31:0] wbi_rd_csr;
+	wire [31:0] wbi_rd_rf;
 	wire        wbi_rd_rst;
 
 	// Command & Reponse FIFOs
-	wire [35:0] cf_di;
+	wire  [3:0] cf_dih;
+	wire [31:0] cf_dil;
 	reg         cf_wren;
 	wire        cf_full;
-	wire [35:0] cf_do;
+	wire  [3:0] cf_doh;
+	wire [31:0] cf_dol;
 	wire        cf_rden;
 	wire        cf_empty;
 
@@ -281,7 +295,7 @@ module qpi_memctrl #(
 	reg  [ 1:0] so_dst;
 	reg  [ 5:0] so_cnt;
 	wire        so_last;
-	reg  [31:0] so_data;
+	reg  [SL:0] so_data;
 
 	// Shift-In
 	wire        si_mode_0;
@@ -289,7 +303,7 @@ module qpi_memctrl #(
 	reg  [ 1:0] si_dst_1;
 	wire [ 1:0] si_dst_n;
 
-	reg  [31:0] si_data_n;
+	reg  [SL:0] si_data_n;
 
 
 	// Wishbone interface
@@ -338,7 +352,8 @@ module qpi_memctrl #(
 	};
 
 	// Command FIFO write
-	assign cf_di = { wb_addr[3:0], wb_wdata };
+	assign cf_dih = wb_addr[3:0];
+	assign cf_dil = wb_wdata;
 
 	always @(posedge clk)
 		cf_wren <= wb_cyc & wb_we & ~wb_ack & wb_addr[4] & ~cf_full;
@@ -349,6 +364,8 @@ module qpi_memctrl #(
 
 	assign rf_rden = wb_ack & rf_rden_arm;
 
+	assign wbi_rd_rf = rf_do;
+
 	// Read mux
 	assign wbi_rd_rst = ~wb_cyc | wb_ack;
 
@@ -356,7 +373,7 @@ module qpi_memctrl #(
 		if (wbi_rd_rst)
 			wb_rdata <= 32'h0000000;
 		else
-			wb_rdata <= wb_addr[1] ? rf_do : wbi_rd_csr;
+			wb_rdata <= wb_addr[1] ? wbi_rd_rf : wbi_rd_csr;
 
 	// FIFOs
 	generate
@@ -364,12 +381,12 @@ module qpi_memctrl #(
 			// Command
 			fifo_sync_ram #(
 				.DEPTH(FIFO_DEPTH),
-				.WIDTH(36)
+				.WIDTH(32+4)
 			) cmd_fifo_I (
-				.wr_data  (cf_di),
+				.wr_data  ({cf_dih, cf_dil}),
 				.wr_ena   (cf_wren),
 				.wr_full  (cf_full),
-				.rd_data  (cf_do),
+				.rd_data  ({cf_doh, cf_dol}),
 				.rd_ena   (cf_rden),
 				.rd_empty (cf_empty),
 				.clk      (clk),
@@ -394,12 +411,12 @@ module qpi_memctrl #(
 			// Command
 			fifo_sync_shift #(
 				.DEPTH(FIFO_DEPTH),
-				.WIDTH(36)
+				.WIDTH(32+4)
 			) cmd_fifo_I (
-				.wr_data  (cf_di),
+				.wr_data  ({cf_dih, cf_dil}),
 				.wr_ena   (cf_wren),
 				.wr_full  (cf_full),
-				.rd_data  (cf_do),
+				.rd_data  ({cf_doh, cf_dol}),
 				.rd_ena   (cf_rden),
 				.rd_empty (cf_empty),
 				.clk      (clk),
@@ -543,13 +560,13 @@ module qpi_memctrl #(
 
 			ST_CMD_EXEC: begin
 				so_ld_valid = ~cf_empty;
-				case (cf_do[35:34])
+				case (cf_doh[3:2])
 					2'b00: { so_ld_mode, so_ld_dst } = { SO_MODE_SPI,     SO_DST_WB   };
 					2'b01: { so_ld_mode, so_ld_dst } = { SO_MODE_QPI_RD,  SO_DST_WB   };
 					2'b10: { so_ld_mode, so_ld_dst } = { SO_MODE_QPI_WR,  SO_DST_NONE };
 					2'b11: { so_ld_mode, so_ld_dst } = { SO_MODE_QPI_CMD, SO_DST_NONE };
 				endcase
-				so_ld_cnt   = cmd_len_rom[cf_do[35:32]];
+				so_ld_cnt   = cmd_len_rom[cf_doh];
 				so_ld_src   = SO_LD_SRC_WB;
 			end
 
@@ -557,7 +574,7 @@ module qpi_memctrl #(
 				so_ld_valid = 1'b1;
 				so_ld_mode  = SO_MODE_QPI_WR;
 				so_ld_dst   = SO_DST_NONE;
-				so_ld_cnt   = (32 / (4 * PHY_WIDTH)) - PHY_SPEED - 1;
+				so_ld_cnt   = (SDW / (4 * PHY_WIDTH)) - PHY_SPEED - 1;
 				so_ld_src   = SO_LD_SRC_MI_DATA;
 			end
 
@@ -572,7 +589,7 @@ module qpi_memctrl #(
 				so_ld_valid = 1'b1;
 				so_ld_mode  = SO_MODE_QPI_RD;
 				so_ld_dst   = SO_DST_MI;
-				so_ld_cnt	= (32 / (4 * PHY_WIDTH)) - PHY_SPEED - 1;
+				so_ld_cnt	= (SDW / (4 * PHY_WIDTH)) - PHY_SPEED - 1;
 			end
 		endcase
 	end
@@ -586,7 +603,7 @@ module qpi_memctrl #(
 	assign mi_wack  = (state == ST_MI_WR_DATA) & so_ld_now;
 	assign mi_wlast = xfer_last;
 
-	assign mi_rdata = si_data_n;
+	assign mi_rdata = si_data_n[DL:0];
 	assign mi_rstb  = si_dst_n[1];
 	assign mi_rlast = si_dst_n[0];
 
@@ -655,10 +672,10 @@ module qpi_memctrl #(
 			{ 1'b0, 2'bzz, SO_MODE_SPI }:		so_data <= shift_spi(so_data);
 			{ 1'b0, 2'bzz, SO_MODE_QPI_WR }:	so_data <= shift_qpi_data(so_data);
 			{ 1'b0, 2'bzz, SO_MODE_QPI_CMD }:	so_data <= shift_qpi_cmd(so_data);
-			{ 1'b1, SO_LD_SRC_WB, 2'bzz }:		so_data <= cf_do[31:0];
-			{ 1'b1, SO_LD_SRC_MI_DATA, 2'bzz }:	so_data <= mi_wdata;
+			{ 1'b1, SO_LD_SRC_WB, 2'bzz }:		so_data <= cf_dol;
+			{ 1'b1, SO_LD_SRC_MI_DATA, 2'bzz }:	so_data <= { mi_wdata, {(STW-SDW){1'b0} } };
 			{ 1'b1, SO_LD_SRC_MI_CMD, 2'bzz }:	so_data <= { mi_spi_cmd, mi_addr };
-			default:							so_data <= 32'hxxxxxxxx;
+			default:							so_data <= {STW{1'bx}};
 		endcase
 	end
 
