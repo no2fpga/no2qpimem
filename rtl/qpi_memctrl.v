@@ -516,7 +516,7 @@ module qpi_memctrl #(
 			pause_cnt <= pause_cnt - 1;
 		else
 			pause_cnt <= PAUSE_CLK - 2;
-	
+
 	assign pause_last = pause_cnt[3];
 
 	// SPI command
