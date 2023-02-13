@@ -19,6 +19,7 @@ module qpi_memctrl #(
 	parameter integer PAUSE_CLK = 3,
 	parameter integer FIFO_DEPTH  = 1,
 	parameter integer N_CS = 2,				/* CS count */
+	parameter integer MODE_CS = 0,			/* 0=normal , 1=decoded */
 	parameter integer DATA_WIDTH = 32,		/* Access port width */
 	parameter integer PHY_SPEED = 1,		/* Speed Factor: 1x 2x 4x */
 	parameter integer PHY_WIDTH = 1,		/* Width Factor: 1x 2x    */
@@ -608,29 +609,59 @@ module qpi_memctrl #(
 	assign mi_rlast = si_dst_n[0];
 
 	// Chip select
-	always @(posedge clk)
-		if (rst)
-			phy_cs_o <= { N_CS{1'b1} };
-		else begin
-			case (state)
-				ST_IDLE: begin
-					// Default
+	generate
+		if (MODE_CS == 0) begin
+			// Classic CS, one line per chip
+			always @(posedge clk)
+				if (rst)
 					phy_cs_o <= { N_CS{1'b1} };
+				else begin
+					case (state)
+						ST_IDLE: begin
+							// Default
+							phy_cs_o <= { N_CS{1'b1} };
 
-					if (mi_valid)
-						phy_cs_o[mi_addr_cs] <= 1'b0;
-					else if (ectl_req)
-						phy_cs_o[ectl_cs] <= 1'b0;
+							if (mi_valid)
+								phy_cs_o[mi_addr_cs] <= 1'b0;
+							else if (ectl_req)
+								phy_cs_o[ectl_cs] <= 1'b0;
+						end
+
+						ST_FLUSH:
+							if (~so_valid)
+								phy_cs_o <= { N_CS{1'b1} };
+
+						ST_PAUSE:
+							phy_cs_o <= { N_CS{1'b1} };
+					endcase
 				end
+		end else begin
+			// Decoded CS, one global enable line + some mux select
+			always @(posedge clk)
+				if (rst)
+					phy_cs_o <= 3'b001;
+				else begin
+					case (state)
+						ST_IDLE: begin
+							// Default
+							phy_cs_o <= 3'b001;
 
-				ST_FLUSH:
-					if (~so_valid)
-						phy_cs_o <= { N_CS{1'b1} };
+							if (mi_valid)
+								phy_cs_o <= { mi_addr_cs, 1'b0 };
+							else if (ectl_req)
+								phy_cs_o <= { ectl_cs, 1'b0 };
+						end
 
-				ST_PAUSE:
-					phy_cs_o <= { N_CS{1'b1} };
-			endcase
+						ST_FLUSH:
+							if (~so_valid)
+								phy_cs_o <= 3'b001;
+
+						ST_PAUSE:
+							phy_cs_o <= 3'b001;
+					endcase
+				end
 		end
+	endgenerate
 
 
 	// Shift-Out unit
