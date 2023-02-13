@@ -13,8 +13,8 @@
 `define MAX(a,b) (((a) < (b)) ? (b) : (a))
 
 module qpi_memctrl #(
-	parameter integer CMD_READ  = 16'hEBEB,
-	parameter integer CMD_WRITE = 16'h0202,
+	parameter integer CMD_READ  = 32'hEBEBEBEB,
+	parameter integer CMD_WRITE = 32'h02020202,
 	parameter integer DUMMY_CLK = 6,
 	parameter integer PAUSE_CLK = 3,
 	parameter integer FIFO_DEPTH  = 1,
