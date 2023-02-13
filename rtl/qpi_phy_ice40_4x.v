@@ -10,7 +10,7 @@
 `default_nettype none
 
 module qpi_phy_ice40_4x #(
-	parameter integer N_CS = 2,					/* CS count */
+	parameter integer N_CS = 2,				/* CS count */
 	parameter integer WITH_CLK = 1,
 
 	// auto
