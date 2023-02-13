@@ -12,6 +12,7 @@
 module qpi_phy_ice40_4x #(
 	parameter integer N_CS = 2,				/* CS count */
 	parameter integer WITH_CLK = 1,
+	parameter integer NEG_IN = 1,			/* Sample on negative edge */
 
 	// auto
 	parameter integer CL = N_CS ? (N_CS-1) : 0
@@ -41,6 +42,9 @@ module qpi_phy_ice40_4x #(
 	wire [ 3:0] iob_io_o;
 	wire [ 3:0] iob_io_i;
 	reg  [CL:0] iob_cs_o;
+
+	wire [ 3:0] iob_io_i_ne;
+	wire [ 3:0] iob_io_i_pe;
 
 
 	// IOs
@@ -108,11 +112,13 @@ module qpi_phy_ice40_4x #(
 		.PACKAGE_PIN   (pad_io),
 		.OUTPUT_ENABLE (iob_io_oe),
 		.D_OUT_0       (iob_io_o),
-		.D_IN_0        (),
-		.D_IN_1        (iob_io_i),
+		.D_IN_0        (iob_io_i_pe),
+		.D_IN_1        (iob_io_i_ne),
 		.OUTPUT_CLK    (clk_4x),
 		.INPUT_CLK     (clk_4x)
 	);
+
+	assign iob_io_i = NEG_IN ? iob_io_i_ne : iob_io_i_pe;
 
 
 	// Clock
